@@ -79,10 +79,11 @@ class PDF::Reader
 
         m = @metrics.char_metrics_by_code[code_point]
         if m.nil?
-          names = @font.encoding.int_to_name(code_point)
-          m = names.map { |name|
-            @metrics.char_metrics[name.to_s]
-          }.compact.first
+          if names = @font.encoding.int_to_name(code_point)
+            m = names.map { |name|
+              @metrics.char_metrics[name.to_s]
+            }.compact.first
+          end
         end
 
         if m
@@ -92,14 +93,19 @@ class PDF::Reader
         elsif control_character?(code_point)
           0
         else
-          raise MalformedPDFError, "Unknown glyph width for #{code_point} #{@font.basefont}"
+          0
+          # raise MalformedPDFError, "Unknown glyph width for #{code_point} #{@font.basefont}"
         end
       end
 
       private
 
       def control_character?(code_point)
-        @font.encoding.int_to_name(code_point).first.to_s[/\Acontrol..\Z/]
+        if names = @font.encoding.int_to_name(code_point)
+          names.first.to_s[/\Acontrol.{2,3}\Z/]
+        else
+          false # Unknown character
+        end
       end
 
     end
